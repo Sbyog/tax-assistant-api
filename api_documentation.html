@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node.js Backend API Documentation</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #333; }
+        h1 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h2 { border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        pre { background-color: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: monospace; }
+        ul { padding-left: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Node.js Backend API Documentation</h1>
+    <p><strong>Last Updated:</strong> May 14, 2025</p>
+
+    <h2>1. Overview</h2>
+    <p>This application is a Node.js backend API designed to serve as a robust template for building modern web applications. It features:</p>
+    <ul>
+        <li><strong>Firebase Integration</strong>: Utilizes Firebase for authentication (Firebase Auth) and database operations (Firestore).</li>
+        <li><strong>Authentication & Authorization</strong>: Implements token-based authentication (Firebase ID tokens) and role-based access control.</li>
+        <li><strong>Data Management</strong>: Provides CRUD (Create, Read, Update, Delete) operations for Firestore collections, with support for filtering and sorting.</li>
+        <li><strong>AI Capabilities</strong>: Integrates with AI services (Google Generative AI and OpenAI) for tasks like content classification, entity extraction, text summarization, speech-to-text, and an interactive AI assistant.</li>
+        <li><strong>Payment Processing</strong>: Includes Stripe integration for handling subscriptions and payments.</li>
+        <li><strong>Conversation History</strong>: Manages and retrieves conversation history, linking with AI assistant interactions.</li>
+        <li><strong>Utility Functions</strong>: Offers endpoints for system health checks, cache management (placeholder), and system information.</li>
+    </ul>
+    <p>The API is structured to be modular, separating concerns into routes, controllers, and services. All API endpoints are designed to use POST requests with JSON payloads.</p>
+
+    <h2>2. Project Structure</h2>
+    <p>The project follows a standard Node.js application structure:</p>
+    <pre><code>
+gpt-assistant-api/
+├── .env                    # Environment variables (local, not committed)
+├── .env.example            # Example environment variables
+├── .gitignore              # Specifies intentionally untracked files for Git
+├── Dockerfile              # Instructions for building a Docker image for the application
+├── README.md               # General project information and setup guide
+├── deploy-notes            # Developer notes related to deployment
+├── package.json            # Project metadata, dependencies, and npm scripts
+├── server.js               # Main entry point of the application
+└── src/                    # Source code directory
+    ├── app.js              # Express application setup, middleware, and route mounting
+    ├── config/
+    │   └── firebase.js     # Firebase Admin SDK initialization and configuration
+    ├── controllers/        # Request handlers (logic for API endpoints)
+    │   ├── aiController.js
+    │   ├── authController.js
+    │   ├── dataController.js
+    │   ├── historyController.js
+    │   ├── stripeController.js
+    │   └── utilityController.js
+    ├── middleware/
+    │   └── authMiddleware.js # Middleware for authenticating requests
+    ├── routes/               # API route definitions
+    │   ├── ai.routes.js
+    │   ├── auth.routes.js
+    │   ├── data.routes.js
+    │   ├── history.routes.js
+    │   ├── stripe.routes.js
+    │   └── utility.routes.js
+    └── services/             # Business logic, database interactions, external API calls
+        ├── aiService.js
+        ├── authService.js
+        ├── dataService.js
+        ├── historyService.js
+        └── stripeService.js
+    </code></pre>
+
+    <h2>3. File Descriptions</h2>
+
+    <h3>Root Directory</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>.env</code></td>
+                <td>(Not present in attachments, but crucial) Stores environment-specific variables like API keys, database credentials, and port numbers. This file is not committed to version control.</td>
+            </tr>
+            <tr>
+                <td><code>.env.example</code></td>
+                <td>A template for the <code>.env</code> file, showing the required environment variables.</td>
+            </tr>
+            <tr>
+                <td><code>.gitignore</code></td>
+                <td>Specifies files and directories that Git should ignore (e.g., <code>node_modules</code>, <code>.env</code>).</td>
+            </tr>
+            <tr>
+                <td><code>Dockerfile</code></td>
+                <td>Defines the environment and steps to build a Docker container for the application, making it portable and easy to deploy.</td>
+            </tr>
+            <tr>
+                <td><code>package.json</code></td>
+                <td>Lists project dependencies, scripts (e.g., for starting the server, testing), version, and other metadata.</td>
+            </tr>
+            <tr>
+                <td><code>README.md</code></td>
+                <td>Provides an overview of the project, setup instructions, and API endpoint documentation.</td>
+            </tr>
+            <tr>
+                <td><code>deploy-notes</code></td>
+                <td>Contains specific notes or reminders for the deployment process.</td>
+            </tr>
+            <tr>
+                <td><code>server.js</code></td>
+                <td>The main entry point for the application. It imports the Express app from <code>src/app.js</code> and starts the HTTP server, listening on a configured port.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3><code>src/</code> Directory</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>File/Folder</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>app.js</code></td>
+                <td>Initializes the Express application, loads environment variables, initializes Firebase, sets up global middleware, mounts route handlers, and includes a function <code>initializeAppStats</code> for initial database operations. Exports the configured Express <code>app</code> instance.</td>
+            </tr>
+            <tr>
+                <td><code>config/firebase.js</code></td>
+                <td>Handles the initialization of the Firebase Admin SDK. Supports multiple credential configuration methods and Firebase emulator connections.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3><code>src/middleware/</code></h3>
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>authMiddleware.js</code></td>
+                <td>Provides middleware (<code>verifyFirebaseToken</code>) to protect routes by verifying Firebase ID tokens from the <code>Authorization</code> header. Attaches decoded user information to <code>req.user</code>.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3><code>src/routes/</code></h3>
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>ai.routes.js</code></td>
+                <td>Defines API routes for AI functionalities (<code>/ai</code>), protected by <code>verifyFirebaseToken</code>. Includes routes for classification, entity extraction, summarization, OpenAI assistant chat, and speech-to-text. Uses <code>multer</code> for file uploads. Maps to <code>AIController</code>.</td>
+            </tr>
+            <tr>
+                <td><code>auth.routes.js</code></td>
+                <td>Defines API routes for authentication and user management (<code>/auth</code>). Includes public and protected routes for token verification, permission checks, and user CRUD operations. Maps to <code>AuthController</code>.</td>
+            </tr>
+            <tr>
+                <td><code>data.routes.js</code></td>
+                <td>Defines API routes for generic Firestore data manipulation (<code>/data</code>). Includes public and protected routes (some requiring admin privileges) for CRUD operations. Maps to <code>DataController</code>.</td>
+            </tr>
+            <tr>
+                <td><code>history.routes.js</code></td>
+                <td>Defines API routes for managing conversation history (<code>/history</code>), all protected by <code>verifyFirebaseToken</code>. Maps to <code>HistoryController</code>.</td>
+            </tr>
+            <tr>
+                <td><code>stripe.routes.js</code></td>
+                <td>Defines API routes for Stripe payment processing (<code>/payments</code>). Includes a public webhook endpoint and protected routes for checkout sessions, customer portals, and subscription management. Maps to <code>StripeController</code>.</td>
+            </tr>
+            <tr>
+                <td><code>utility.routes.js</code></td>
+                <td>Defines API routes for utility functions (<code>/utility</code>). Includes a public health check and admin-only routes for cache refresh and system info. Maps to <code>UtilityController</code>.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3><code>src/controllers/</code></h3>
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>aiController.js</code></td>
+                <td>Handles HTTP requests for AI endpoints, validates parameters, calls <code>aiService.js</code>, and formats responses.</td>
+            </tr>
+            <tr>
+                <td><code>authController.js</code></td>
+                <td>Handles requests for authentication and user management, interacts with <code>authService.js</code>, and manages request/response flow.</td>
+            </tr>
+            <tr>
+                <td><code>dataController.js</code></td>
+                <td>Manages requests for generic data operations, calls <code>dataService.js</code> for Firestore interactions, and adds user info to data items.</td>
+            </tr>
+            <tr>
+                <td><code>historyController.js</code></td>
+                <td>Handles requests for conversation history, extracts user ID, and calls <code>historyService.js</code>.</td>
+            </tr>
+            <tr>
+                <td><code>stripeController.js</code></td>
+                <td>Manages requests for Stripe operations, handles webhook logic, and interacts with <code>stripeService.js</code> and <code>authService.js</code>.</td>
+            </tr>
+            <tr>
+                <td><code>utilityController.js</code></td>
+                <td>Handles requests for utility endpoints, provides health checks, and system information.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3><code>src/services/</code></h3>
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>aiService.js</code></td>
+                <td>Core logic for interacting with Google Generative AI and OpenAI. Manages API keys, prompt templates, and functions for classification, entity extraction, summarization, OpenAI Assistant interactions, and audio transcription.</td>
+            </tr>
+            <tr>
+                <td><code>authService.js</code></td>
+                <td>Functions for authentication and user management logic, interacting with Firebase Auth and Firestore. Includes token verification, role checking, and user CRUD operations in Firestore.</td>
+            </tr>
+            <tr>
+                <td><code>dataService.js</code></td>
+                <td>Functions for generic Firestore database operations (CRUD, config fetching).</td>
+            </tr>
+            <tr>
+                <td><code>historyService.js</code></td>
+                <td>Manages conversation history in Firestore (saving, listing, retrieving messages by calling <code>aiService</code>, deleting).</td>
+            </tr>
+            <tr>
+                <td><code>stripeService.js</code></td>
+                <td>Encapsulates all interactions with the Stripe API (checkout sessions, customer management, subscriptions, webhooks, customer portal).</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

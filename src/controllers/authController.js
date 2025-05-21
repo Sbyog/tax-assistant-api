@@ -108,8 +108,12 @@ class AuthController {
       if (!uid || !email) {
         return res.status(400).json({ message: 'uid and email are required' });
       }
-      await this.authService.createUser(uid, email, displayName, photoURL);
-      return res.status(201).json({ message: 'User created successfully' });
+      // Assuming authService.createUser now returns the created user object
+      const newUser = await this.authService.createUser(uid, email, displayName, photoURL);
+      // Return the newly created user's details
+      // log the new user creation
+      console.log('New user created:', newUser);
+      return res.status(201).json({ message: 'User created successfully', user: newUser });
     } catch (error) {
       console.error('Error creating user:', error);
       if (error.message === 'User already exists') {
@@ -146,7 +150,7 @@ class AuthController {
       if (!userData) {
         return res.status(404).json({ message: 'User not found' });
       }
-      return res.status(200).json(userData);
+      return res.status(200).json({message: 'User data retrieved successfully', user: userData });
     } catch (error) {
       console.error('Error getting user data:', error);
       return res.status(500).json({ message: 'Internal server error' });

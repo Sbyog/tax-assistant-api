@@ -120,20 +120,36 @@ const createUser = async (uid, email, displayName, photoURL) => {
       throw new Error('User already exists');
     }
 
-    const userData = {
+    const newUserPayload = {
       uid,
       email,
       displayName: displayName || null,
       photoURL: photoURL || null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      signUpDate: admin.firestore.FieldValue.serverTimestamp(),
+      subscriptionStatus: 'new', // new users get 7 days free
       lastLogin: null, // Initialize lastLogin
       stripeCustomerId: null, // Initialize stripeCustomerId
       // Add any other default fields here, e.g., role
       role: 'user' 
     };
 
-    await userRef.set(userData);
-    return userData; // Or just return success
+    await userRef.set(newUserPayload);
+
+    // Fetch the newly created document to get the resolved server timestamps
+    const newUserDoc = await userRef.get();
+    const createdUserData = newUserDoc.data();
+
+    // Convert Firestore Timestamps to ISO strings for a more standard API response
+    // This is optional but often good practice.
+    // If you prefer to keep them as Firestore Timestamp objects, you can skip this conversion.
+    return {
+      ...createdUserData,
+      createdAt: createdUserData.createdAt ? createdUserData.createdAt.toDate().toISOString() : null,
+      signUpDate: createdUserData.signUpDate ? createdUserData.signUpDate.toDate().toISOString() : null,
+      // lastLogin will be null initially, so no need to convert yet
+    };
+
   } catch (error) {
     console.error('Error creating user:', error);
     throw error; // Re-throw to be handled by controller
@@ -173,17 +189,15 @@ const getUserData = async (userId) => {
     if (!doc.exists) {
       return null; // User not found
     }
-    // Ensure all expected fields are present, even if null
+    
     const data = doc.data();
+    // Return all fields from the document, converting timestamps to ISO strings
     return {
-        uid: data.uid,
-        email: data.email,
-        displayName: data.displayName || null,
-        photoURL: data.photoURL || null,
+        ...data, // Spread all fields from the document
         createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+        signUpDate: data.signUpDate ? data.signUpDate.toDate().toISOString() : null,
         lastLogin: data.lastLogin ? data.lastLogin.toDate().toISOString() : null,
-        stripeCustomerId: data.stripeCustomerId || null,
-        role: data.role || 'user' // ensure role is returned
+        // Ensure other potential timestamp fields are also handled if necessary
     };
   } catch (error) {
     console.error('Error getting user data:', error);

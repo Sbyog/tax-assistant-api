@@ -17,6 +17,7 @@ echo "Deploying to Google Cloud Run..."
 # IMPORTANT: Replace YOUR_PROJECT_ID with your actual Google Cloud Project ID
 gcloud run deploy tax-assistant-api \
     --source . \
+    --project ai-tools-mvp \
     --region asia-southeast1 \
     --allow-unauthenticated
 
